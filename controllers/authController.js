@@ -29,7 +29,7 @@ const createSendToken = (user, statusCode, res) => {
   user.password = undefined;
 
   res.status(statusCode).json({
-    status: 'success ',
+    status: 'success',
     token,
     data: {
       user
@@ -66,6 +66,14 @@ exports.login = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 });
 
+exports.logout = (req, res) => {
+  //
+  res.cookie('jwt', 'loggedOut', {
+    expires: new Date(Date.now() + 10000)
+  });
+  res.status(200).json({ status: 'success' });
+};
+
 exports.protect = catchAsync(async (req, res, next) => {
   let token;
   //Get token and check it exists
@@ -74,8 +82,9 @@ exports.protect = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
   }
-  // console.log(token);
 
   if (!token) {
     return next(
@@ -105,8 +114,42 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
   //GRANT ACCESS TO PROTECTED ROUTE
   req.user = currentUser;
+  res.locals.user = currentUser;
   next();
 });
+
+//Only on rendered pages
+exports.isLoggedIn = async (req, res, next) => {
+  try {
+    console.log(req.cookies.jwt);
+    if (req.cookies.jwt) {
+      //Verify jwt
+      const decoded = await promisify(jwt.verify)(
+        req.cookies.jwt,
+        process.env.JWT_SECRET
+      );
+
+      //Check if user still exists
+      const currentUser = await User.findById(decoded.id).select(
+        '+passwordChangedAt'
+      );
+      if (!currentUser) {
+        return next();
+      }
+      //Check if user changed password after the token was issued
+      if (currentUser.changedPasswordAfter(decoded.iat)) {
+        return next();
+      }
+
+      //THERE IS A LOGGED IN USER
+      res.locals.user = currentUser;
+      // console.log(res.locals);
+    }
+  } catch (err) {
+    console.log(err.response);
+  }
+  next();
+};
 
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {

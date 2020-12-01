@@ -933,8 +933,14 @@ body {
   outline: none;
 }
 .nav__el--cta {
-  padding: 1rem 3rem;
-  border-radius: 10rem;
+  text-transform: uppercase;
+  font-size: 1.6rem;
+  text-decoration: none;
+  font-weight: 400;
+  background-color: white;
+  color: black !important;
+  padding: 1rem 3rem !important;
+  border-radius: 10rem !important;
   border: 1px solid currentColor !important;
   -webkit-transition: all 0.3s;
   transition: all 0.3s;
