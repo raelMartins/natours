@@ -47,7 +47,7 @@ exports.signup = catchAsync(async (req, res, next) => {
   });
 
   const url = `${req.protocol}://${req.get('host')}/me`;
-  console.log(url);
+  // console.log(url);
   await new Email(newUser, url).sendWelcome();
 
   createSendToken(newUser, 201, res);
@@ -112,7 +112,6 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   //Check if user changed password after the token was issued
   if (currentUser.changedPasswordAfter(decoded.iat)) {
-    console.log(currentUser.changedPasswordAfter(decoded.iat));
     return next(
       new AppError('User recently changed password. Please login again', 401)
     );
@@ -126,7 +125,6 @@ exports.protect = catchAsync(async (req, res, next) => {
 //Only on rendered pages
 exports.isLoggedIn = async (req, res, next) => {
   try {
-    console.log(req.cookies.jwt);
     if (req.cookies.jwt) {
       //Verify jwt
       const decoded = await promisify(jwt.verify)(
